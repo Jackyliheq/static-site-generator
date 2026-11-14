@@ -1,4 +1,4 @@
-
+from enum import Enum
 
 class HTMLNode:
     def __init__(self, tag=None, value=None, children=None, props=None) -> None:
@@ -54,4 +54,3 @@ class ParentNode(HTMLNode):
     
     def __repr__(self) -> str:
         return f"ParentNode({self.tag}, {self.children}, {self.props})"
-    
