@@ -1,5 +1,6 @@
 from enum import Enum
 from htmlnode import LeafNode
+from extract_markdown import extract_markdown_images, extract_markdown_links
 
 class TextType(Enum):
     TEXT = "text"
@@ -58,4 +59,65 @@ def split_nodes_delimiter(old_nodes: list[TextNode], delimiter: str, text_type: 
                 new_nodes.append(TextNode(split_texts[i], TextType.TEXT))
             else:
                 new_nodes.append(TextNode(split_texts[i], text_type))
+    return new_nodes
+
+def split_nodes_image(old_nodes: list[TextNode]) -> list[TextNode]:
+    new_nodes = []
+    
+    for node in old_nodes:
+        if node.text_type is not TextType.TEXT:
+            new_nodes.append(node)
+            continue
+        
+        images = extract_markdown_images(node.text)
+        if len(images) == 0:
+            new_nodes.append(node)
+            continue
+        
+        for image in images:
+            sections = node.text.split(f"![{image[0]}]({image[1]})", 1)
+            if len(sections) != 2:
+                raise ValueError("invalid markdown, image section not closed")
+            
+            if sections[0] != "":
+                new_nodes.append(TextNode(sections[0], TextType.TEXT))
+                
+            new_nodes.append(
+                TextNode(
+                    image[0],
+                    TextType.IMAGE,
+                    image[1],
+                )
+            )
+            
+            node.text = sections[1]
+            
+        if node.text != "":
+            new_nodes.append(TextNode(node.text, TextType.TEXT))
+    return new_nodes
+
+
+
+
+def split_nodes_link(old_nodes: list[TextNode]) -> list[TextNode]:
+    new_nodes = []
+    for node in old_nodes:
+        if node.text_type != TextType.TEXT:
+            new_nodes.append(node)
+            continue
+        
+        links = extract_markdown_links(node.text)
+        if len(links) == 0:
+            new_nodes.append(node)
+            continue
+        for link in links:
+            sections = node.text.split(f"[{link[0]}]({link[1]})", 1)
+            if len(sections) != 2:
+                raise ValueError("invalid markdown, link section not closed")
+            if sections[0] != "":
+                new_nodes.append(TextNode(sections[0], TextType.TEXT))
+            new_nodes.append(TextNode(link[0], TextType.LINK, link[1]))
+            node.text = sections[1]
+        if node.text != "":
+            new_nodes.append(TextNode(node.text, TextType.TEXT))
     return new_nodes
