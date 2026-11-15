@@ -1,6 +1,6 @@
 import unittest
 from htmlnode import HTMLNode, LeafNode, ParentNode
-from textnode import TextNode, TextType, text_node_to_html_node, split_nodes_delimiter, split_nodes_image, split_nodes_link
+from textnode import TextNode, TextType, text_node_to_html_node, split_nodes_delimiter, split_nodes_image, split_nodes_link, text_to_textnodes
 from extract_markdown import extract_markdown_images, extract_markdown_links
 
 class TestHTMLNode(unittest.TestCase):
@@ -315,5 +315,53 @@ class TestHTMLNode(unittest.TestCase):
         new_nodes = split_nodes_link([node])
         self.assertListEqual([node], new_nodes)
         
+        
+    # Text to textnodes
+    
+    
+    def test_text_to_textnodes(self):
+        nodes = text_to_textnodes(
+            "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        )
+        self.assertListEqual(
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("text", TextType.BOLD),
+                TextNode(" with an ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" word and a ", TextType.TEXT),
+                TextNode("code block", TextType.CODE),
+                TextNode(" and an ", TextType.TEXT),
+                TextNode(
+                    "obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"
+                ),
+                TextNode(" and a ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "https://boot.dev"),
+            ],
+            nodes,
+        )
+
+    def test_text_to_textnodes_plain(self):
+        nodes = text_to_textnodes("Just plain text with no formatting")
+        self.assertListEqual(
+            [TextNode("Just plain text with no formatting", TextType.TEXT)],
+            nodes,
+        )
+
+    def test_text_to_textnodes_multiple_same_type(self):
+        nodes = text_to_textnodes("**Bold 1** normal **Bold 2** and `code`")
+        self.assertListEqual(
+            [
+                TextNode("Bold 1", TextType.BOLD),
+                TextNode(" normal ", TextType.TEXT),
+                TextNode("Bold 2", TextType.BOLD),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("code", TextType.CODE),
+            ],
+            nodes,
+        )
+            
+    
+    
 if __name__ == "__main__":
     unittest.main()    
