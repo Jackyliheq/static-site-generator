@@ -1,6 +1,15 @@
 import unittest
 from htmlnode import HTMLNode, LeafNode, ParentNode
-from textnode import TextNode, TextType, text_node_to_html_node, split_nodes_delimiter, split_nodes_image, split_nodes_link, text_to_textnodes, markdown_to_blocks
+from textnode import (TextNode, 
+                      TextType,
+                      BlockType, 
+                      text_node_to_html_node, 
+                      split_nodes_delimiter, 
+                      split_nodes_image, 
+                      split_nodes_link, 
+                      text_to_textnodes, 
+                      markdown_to_blocks,
+                      block_to_block_type)
 from extract_markdown import extract_markdown_images, extract_markdown_links
 
 class TestHTMLNode(unittest.TestCase):
@@ -407,7 +416,39 @@ This is the same paragraph on a new line
             ],
         )
             
+    # block to blocktype test
     
+    def test_block_to_block_types(self):
+        self.assertEqual(block_to_block_type("# Heading 1"), BlockType.HEADING)
+        self.assertEqual(block_to_block_type("###### Heading 6"), BlockType.HEADING)
+        self.assertEqual(block_to_block_type("```\nprint('hello')\n```"), BlockType.CODE)
+        self.assertEqual(block_to_block_type("> Quote line 1\n>Quote line 2"), BlockType.QUOTE)
+        self.assertEqual(block_to_block_type("- Item 1\n- Item 2"), BlockType.UNORDERED_LIST)
+        self.assertEqual(block_to_block_type("1. First\n2. Second\n3. Third"), BlockType.ORDERED_LIST)
+        self.assertEqual(block_to_block_type("Just a normal paragraph."), BlockType.PARAGRAPH)
+
+    def test_invalid_headings_and_code(self):
+        self.assertEqual(block_to_block_type("####### Seven hashes"), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type("#NoSpaceAfterHash"), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type("```single line code```"), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type("```\nunclosed code block"), BlockType.PARAGRAPH)
+
+    def test_broken_multiline_quotes_and_unordered_lists(self):
+        broken_quote = "> Valid first line\nMissing > on second line"
+        self.assertEqual(block_to_block_type(broken_quote), BlockType.PARAGRAPH)
+
+        broken_ul = "- Valid first item\n-Missing space on second item"
+        self.assertEqual(block_to_block_type(broken_ul), BlockType.PARAGRAPH)
+
+    def test_invalid_ordered_lists(self):
+        wrong_start = "2. Starts at two\n3. Three"
+        self.assertEqual(block_to_block_type(wrong_start), BlockType.PARAGRAPH)
+
+        skipped_number = "1. First\n3. Skipped two"
+        self.assertEqual(block_to_block_type(skipped_number), BlockType.PARAGRAPH)
+
+        missing_space = "1. First\n2.No space"
+        self.assertEqual(block_to_block_type(missing_space), BlockType.PARAGRAPH)
     
 if __name__ == "__main__":
     unittest.main()    
