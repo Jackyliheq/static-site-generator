@@ -9,7 +9,8 @@ from textnode import (TextNode,
                       split_nodes_link, 
                       text_to_textnodes, 
                       markdown_to_blocks,
-                      block_to_block_type)
+                      block_to_block_type,
+                      markdown_to_html_node)
 from extract_markdown import extract_markdown_images, extract_markdown_links
 
 class TestHTMLNode(unittest.TestCase):
@@ -449,6 +450,81 @@ This is the same paragraph on a new line
 
         missing_space = "1. First\n2.No space"
         self.assertEqual(block_to_block_type(missing_space), BlockType.PARAGRAPH)
+        
+    # test for markdown to html node
+    
+    def test_paragraphs(self):
+            md = """
+This is **bolded** paragraph
+text in a p
+tag here
+
+This is another paragraph with _italic_ text and `code` here
+"""
+            node = markdown_to_html_node(md)
+            html = node.to_html()
+            self.assertEqual(
+            html,
+            "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p><p>This is another paragraph with <i>italic</i> text and <code>code</code> here</p></div>",
+        )
+            
+    def test_codeblock(self):
+        md = """
+```
+This is text that _should_ remain
+the **same** even with inline stuff
+```
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
+        )
+
+    def test_headings(self):
+        md = """
+# Heading 1
+
+### Heading 3 with **bold**
+
+###### Heading 6
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><h1>Heading 1</h1><h3>Heading 3 with <b>bold</b></h3><h6>Heading 6</h6></div>",
+        )
+
+    def test_blockquote(self):
+        md = """
+> This is a quote
+> with _italic_ text
+>and no space on line three
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><blockquote>This is a quote with <i>italic</i> text and no space on line three</blockquote></div>",
+        )
+
+    def test_lists(self):
+        md = """
+- First **unordered** item
+- Second item with [link](https://example.com)
+
+1. First ordered item
+2. Second ordered item
+3. Third ordered item
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            '<div><ul><li>First <b>unordered</b> item</li><li>Second item with <a href="https://example.com">link</a></li></ul><ol><li>First ordered item</li><li>Second ordered item</li><li>Third ordered item</li></ol></div>',
+        )
     
 if __name__ == "__main__":
     unittest.main()    
