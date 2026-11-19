@@ -1,6 +1,7 @@
 from enum import Enum
 from htmlnode import LeafNode, ParentNode
 from extract_markdown import extract_markdown_images, extract_markdown_links
+import os
 
 class TextType(Enum):
     TEXT = "text"
@@ -259,6 +260,32 @@ def markdown_to_html_node(markdown):
     for block in blocks:
         children.append(block_to_html_node(block))
     return ParentNode("div", children)
+
+
+def extract_title(markdown):
+    lines = markdown.split("\n")
+    for line in lines:
+        if line.startswith("# "):
+            return line.strip("# ").strip()
+    raise Exception("No h1 header found")
         
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+    with open(from_path, "r") as from_file:
+        source = from_file.read()
         
+    with open(template_path, "r") as template_file:
+        template = template_file.read()
+         
+    html = markdown_to_html_node(source).to_html()
+    title = extract_title(source)
     
+    template = template.replace("{{ Title }}", title)
+    template = template.replace("{{ Content }}", html)
+    
+    destination = os.path.dirname(dest_path)
+    if destination != "":
+        os.makedirs(destination, exist_ok=True)
+        
+    with open(dest_path, "w") as dest_file:
+        dest_file.write(template)

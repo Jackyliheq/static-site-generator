@@ -1,6 +1,6 @@
 import os
 import shutil
-
+from textnode import generate_page
 
 def copy_files(source, destination):
     if not os.path.exists(destination):
@@ -27,5 +27,7 @@ def main():
     
     copy_files(source_dir, destination_dir)
     
-        
+    generate_page("content/index.md", "template.html", "public/index.html")
+    
+    
 main()
